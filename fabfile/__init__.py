@@ -23,25 +23,28 @@ env.versionroot = os.path.join(env.projectroot, 'releases')
 env.releaseroot = os.path.join(env.versionroot, env.release)
 
 
+from . import releases
+
 @task
 def local():
-    pass
+    env.hosts = ["localhost"]
 
 
 @task
 def staging():
     """ Sets hosts for staging-env
     """
-    env.hosts = "user@sta.gi.ng"
+    env.hosts = ["user@sta.gi.ng"]
 
 
 @task
 def production():
     """ Sets hosts for production-env
     """
-    env.hosts = []
+    env.hosts = ["user@pro.ducti.on"]
 
 environments = [local, staging, production]
+
 
 @task
 def bootstrap():
@@ -56,23 +59,6 @@ def setup():
     """
     pass
 
-@task
-def create_release(release=env.release):
-    """ Create the folders needed for a new release
-    """
-    require('release', 'hosts', provided_by=environments)
-    if not exists('%(projectroot)s' % env):
-        run('mkdir %(projectroot)s' % env)
-
-    if not exists('%(commonroot)s' % env):
-        run('mkdir %(commonroot)s' % env)
-
-    if not exists('%(versionroot)s' % env):
-        run('mkdir %(versionroot)s' % env)
-
-    if not exists('%(releaseroot)s' % env):
-        run('mkdir %(releaseroot)s' % env)
-
 
 @task
 def deploy():
@@ -86,19 +72,3 @@ def deploy():
     link_release()
 
 
-@task
-def link_release(release=env.release):
-    """ Link a release for easy configuration
-    """
-    require('hosts', provided_by=environments)
-    with cd('%(projectroot)s' % env):
-        run("ln -snf 'releases/%s' current" % release)
-
-
-@task
-def list_releases():
-    """ List the deployed releases on the server
-    """
-    require('hosts', provided_by=environments)
-    with cd('%(versionroot)s' % env):
-        run('ls')
