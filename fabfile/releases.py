@@ -3,6 +3,7 @@ from fabric.api import cd, task
 from fabric.contrib.files import exists
 from fabric.operations import require, run
 
+
 @task
 def create_directory(release=env.release):
     """ Create the folders needed for a new release

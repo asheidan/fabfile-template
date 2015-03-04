@@ -25,6 +25,7 @@ env.releaseroot = os.path.join(env.versionroot, env.release)
 
 from . import releases
 
+
 @task
 def local():
     env.hosts = ["localhost"]
@@ -65,10 +66,9 @@ def deploy():
     """ Deploys a new version to the server
     """
     require('hosts', provided_by=environments)
-    create_release()
+    releases.create_directory()
     rsync_project(local_dir="./",
                   remote_dir=env.releaseroot,
                   extra_opts='--link-dest="%(currentroot)s"' % env)
-    link_release()
-
+    releases.link_directory()
 
