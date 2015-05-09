@@ -1,7 +1,10 @@
 from fabric.api import cd, env, task
+# from fabric.context_managers import cd
 from fabric.contrib.files import exists
 from fabric.contrib.project import rsync_project
-from fabric.operations import require, run, sudo
+from fabric.operations import require, run, sudo, put
+
+from utils import w
 
 import time
 import os
@@ -11,40 +14,29 @@ env.hostnames = {
     'production': [],
 }
 
+
+def _env(key):
+    value = env.get(key)
+    if hasattr(value, "__call__"):
+        return value()
+    else:
+        return value
+
 env.wwwroot = "/var/www"
 env.projectname = "fabfile_deploy"
+env.localroot = "./"
 
-env.projectroot = os.path.join(env.wwwroot, env.projectname)
+env.projectroot = w(lambda: os.path.join(env.wwwroot, env.projectname))
 env.release = time.strftime("%Y%m%d%H%M%S")
 
-env.commonroot = os.path.join(env.projectroot, 'common')
-env.currentroot = os.path.join(env.projectroot, 'current')
-env.versionroot = os.path.join(env.projectroot, 'releases')
-env.releaseroot = os.path.join(env.versionroot, env.release)
+env.commonroot = w(lambda: os.path.join(env.projectroot(), 'common'))
+env.currentroot = w(lambda: os.path.join(env.projectroot(), 'current'))
+env.versionroot = w(lambda: os.path.join(env.projectroot(), 'releases'))
+env.releaseroot = w(lambda: os.path.join(env.versionroot(), env.release))
 
 
 from . import releases
-
-
-@task
-def local():
-    env.hosts = ["localhost"]
-
-
-@task
-def staging():
-    """ Sets hosts for staging-env
-    """
-    env.hosts = ["user@sta.gi.ng"]
-
-
-@task
-def production():
-    """ Sets hosts for production-env
-    """
-    env.hosts = ["user@pro.ducti.on"]
-
-environments = [local, staging, production]
+from .deploy import transfer
 
 
 @task
@@ -65,10 +57,13 @@ def setup():
 def deploy():
     """ Deploys a new version to the server
     """
-    require('hosts', provided_by=environments)
+    require('hosts')
     releases.create_directory()
-    rsync_project(local_dir="./",
+    rsync_project(local_dir=env.localroot,
                   remote_dir=env.releaseroot,
+                  exclude=["*.py[co]", "*~", "__pycache__", ".DS_Store"],
                   extra_opts='--link-dest="%(currentroot)s"' % env)
+
     releases.link_directory()
+
 

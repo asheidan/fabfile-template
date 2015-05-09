@@ -8,7 +8,8 @@ from fabric.operations import require, run
 def create_directory(release=env.release):
     """ Create the folders needed for a new release
     """
-    require('release', 'hosts')
+    require('release', 'hosts', 'projectroot', 'commonroot',
+            'versionroot', 'releaseroot')
     if not exists('%(projectroot)s' % env):
         run('mkdir %(projectroot)s' % env)
 
@@ -18,6 +19,7 @@ def create_directory(release=env.release):
     if not exists('%(versionroot)s' % env):
         run('mkdir %(versionroot)s' % env)
 
+    # This is created by rsync
     if not exists('%(releaseroot)s' % env):
         run('mkdir %(releaseroot)s' % env)
 
@@ -26,7 +28,7 @@ def create_directory(release=env.release):
 def link_directory(release=env.release):
     """ Link a release for easy configuration
     """
-    require('hosts')
+    require('hosts', 'releaseroot', 'currentroot')
     with cd('%(projectroot)s' % env):
         run("ln -snf 'releases/%s' current" % release)
 
