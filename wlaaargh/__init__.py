@@ -1,10 +1,13 @@
 from fabric.api import cd, env, task
 # from fabric.context_managers import cd
-from fabric.contrib.files import exists
+# from fabric.contrib.files import exists
 from fabric.contrib.project import rsync_project
-from fabric.operations import require, run, sudo, put
+from fabric.operations import require  # run, sudo, put
 
-from utils import w
+from .utils import w
+from . import git
+from . import releases
+from . import virtualenv
 
 import time
 import os
@@ -35,10 +38,6 @@ env.versionroot = w(lambda: os.path.join(env.projectroot(), 'releases'))
 env.releaseroot = w(lambda: os.path.join(env.versionroot(), env.release))
 
 
-from . import releases
-from .deploy import transfer
-
-
 @task
 def bootstrap():
     """ Installs necessary software on the server
@@ -57,13 +56,24 @@ def setup():
 def deploy():
     """ Deploys a new version to the server
     """
-    require('hosts')
+    require('hosts', 'deploybranch')
+
+    # Make sure directories exists
     releases.create_directory()
-    rsync_project(local_dir=env.localroot,
-                  remote_dir=env.releaseroot,
-                  exclude=["*.py[co]", "*~", "__pycache__", ".DS_Store"],
-                  extra_opts='--link-dest="%(currentroot)s"' % env)
 
+    # Transfer
+    git.push(env.deploybranch)
+
+    # Copy code to releasedirectory
+    git.remote_export(env.deploybranch)
+
+    # Setup new virtualenv for new release
+    env.virtualenvroot = os.path.join(env.releaseroot(), "virtualenv")
+    virtualenv.create(env.virtualenvroot)
+
+    # Install packages in virtualenv
+    with cd(env.releaseroot()):
+        virtualenv.install("-r %s" % env.requirementsfile)
+
+    # Set the deployed release as "current"
     releases.link_directory()
-
-
