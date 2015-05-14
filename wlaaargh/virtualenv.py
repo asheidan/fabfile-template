@@ -1,7 +1,7 @@
 from fabric.api import env, task
-from fabric.operations import require, run
+from fabric.operations import require
 
-from .utils import w
+from .utils import w, run
 import os
 
 env.pipcachedir = w(lambda: os.path.join(env.projectroot(), "pipcache"))

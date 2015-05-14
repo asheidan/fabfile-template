@@ -2,7 +2,7 @@ from fabric.api import cd, env, task
 # from fabric.context_managers import cd
 # from fabric.contrib.files import exists
 from fabric.contrib.project import rsync_project
-from fabric.operations import require  # run, sudo, put
+from fabric.operations import require  # sudo, put
 
 from .utils import w
 from . import git
@@ -56,7 +56,7 @@ def setup():
 def deploy():
     """ Deploys a new version to the server
     """
-    require('hosts', 'deploybranch')
+    require('hosts', 'deploybranch', 'piprequirementsfile')
 
     # Make sure directories exists
     releases.create_directory()
@@ -65,7 +65,7 @@ def deploy():
     git.push(env.deploybranch)
 
     # Copy code to releasedirectory
-    git.remote_export(env.deploybranch)
+    git.remote_export(env.deploybranch, env.releaseroot)
 
     # Setup new virtualenv for new release
     env.virtualenvroot = os.path.join(env.releaseroot(), "virtualenv")
@@ -73,7 +73,7 @@ def deploy():
 
     # Install packages in virtualenv
     with cd(env.releaseroot()):
-        virtualenv.install("-r %s" % env.requirementsfile)
+        virtualenv.install("-r %s" % env.piprequirementsfile)
 
     # Set the deployed release as "current"
     releases.link_directory()

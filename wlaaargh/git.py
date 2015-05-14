@@ -1,8 +1,8 @@
 from fabric.api import env, task
 from fabric.contrib.files import exists
-from fabric.operations import local, run
+from fabric.operations import local
 
-from .utils import w
+from .utils import w, run
 
 import os
 
@@ -23,10 +23,10 @@ def push(commit, local_repo=".git", remote_repo=None):
         run("git init --bare '%s'" % env.remoterepo())
 
     # host_info = "%s@%s:%s" % (env.user, env.host_string, env.port)
-    command = "git --git-dir='%s' push 'ssh://%s%s' '%s'" % (
-        local_repo, env.host_string, env.remoterepo(), commit
+    command = "git --git-dir='%s' push -f -q 'ssh://%s@%s%s' '%s'" % (
+        local_repo, env.impersonate_user, env.host_string, env.remoterepo(), commit
     )
-    local(command, )  # env.passwords[host_info])
+    return local(command, )  # env.passwords[host_info])
 
 
 @task
